@@ -6,11 +6,7 @@ from flask_jwt_extended import JWTManager
 from redis import Redis
 from config import Config
 from routes.__init__ import register_routes 
-
-db = SQLAlchemy()
-migrate = Migrate()
-jwt = JWTManager()
-redis_client = Redis(host="localhost", port=6379, decode_responses=True)
+from extenstion import db, migrate, jwt, redis_client
 
 def create_app():
     app = Flask(__name__)
