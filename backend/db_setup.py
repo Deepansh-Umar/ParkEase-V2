@@ -1,4 +1,5 @@
-from app import app, db
+from app import app
+from extenstion import db
 from models import User
 import uuid
 from werkzeug.security import generate_password_hash
