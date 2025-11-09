@@ -1,6 +1,6 @@
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
-from extenstion import db
+from extentions import db
 
 class User(db.Model):
     __tablename__ = "users"
@@ -21,7 +21,8 @@ class ParkingLot(db.Model):
     location = db.Column(db.String(200), nullable=False)
     total_spots = db.Column(db.Integer, nullable=False)
     available_spots = db.Column(db.Integer, nullable=False)
-
+    price = db.Column(db.Float, nullable = False)
+    pincode = db.Column(db.Integer, nullable = False)
     spots = db.relationship("ParkingSpot", back_populates="lot")
 
 class ParkingSpot(db.Model):

@@ -6,7 +6,7 @@ from flask_jwt_extended import JWTManager
 from redis import Redis
 from config import Config
 from routes.__init__ import register_routes 
-from extenstion import db, migrate, jwt, redis_client
+from backend.extentions import db, migrate, jwt, redis_client
 
 #forcommit
 def create_app():
