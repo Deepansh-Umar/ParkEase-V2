@@ -1,80 +1,69 @@
+# routes/auth_routes.py
 from flask import Blueprint, request, jsonify
 from werkzeug.security import generate_password_hash, check_password_hash
-from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
-from backend.extentions import db
+from flask_jwt_extended import create_access_token
+from extensions import db
 from models import User
-import uuid
-from datetime import timedelta
+from utils import generate_user_id
 
-auth_bp = Blueprint("auth_bp", __name__, url_prefix="/api/auth")
+auth_bp = Blueprint("auth_bp", __name__)
 
-#Register route
-@auth_bp.route("/signup", methods=["POST"])
-def signup():
+# ----------------------------- REGISTER -----------------------------
+@auth_bp.route("/register", methods=["POST"])
+def register():
     data = request.get_json()
 
     username = data.get("username")
     email = data.get("email")
     password = data.get("password")
 
-    if not all([username, email, password]):
-        return jsonify({"error": "Missing fields"}), 400
+    if not username or not email or not password:
+        return jsonify({"error": "All fields are required"}), 400
 
-    if User.query.filter((User.username == username) | (User.email == email)).first():
-        return jsonify({"error": "User already exists"}), 400
+    if User.query.filter_by(username=username).first():
+        return jsonify({"error": "Username already exists"}), 400
 
-    hashed_password = generate_password_hash(password)
+    if User.query.filter_by(email=email).first():
+        return jsonify({"error": "Email already exists"}), 400
 
-    new_user = User(
-        user_id=str(uuid.uuid4())[:8],
+    hashed_pw = generate_password_hash(password)
+
+    user = User(
+        id=str(generate_user_id()),
         username=username,
         email=email,
-        password=hashed_password,
-        is_admin=False,
+        password=hashed_pw,
+        role="user"
     )
-    db.session.add(new_user)
+
+    db.session.add(user)
     db.session.commit()
 
-    return jsonify({"message": "User registered successfully!"}), 201
+    return jsonify({"message": "Registration successful"}), 201
 
 
-#Login route
+# ----------------------------- LOGIN -----------------------------
 @auth_bp.route("/login", methods=["POST"])
 def login():
     data = request.get_json()
 
-    username_or_email = data.get("username_or_email")
+    username = data.get("username")
     password = data.get("password")
 
-    if not all([username_or_email, password]):
-        return jsonify({"error": "Missing credentials"}), 400
-
-    user = User.query.filter(
-        (User.username == username_or_email) | (User.email == username_or_email)
-    ).first()
+    user = User.query.filter_by(username=username).first()
 
     if not user or not check_password_hash(user.password, password):
         return jsonify({"error": "Invalid username or password"}), 401
 
-    access_token = create_access_token(
-        identity={"user_id": user.id, "username": user.username, "is_admin": user.is_admin},
-        expires_delta=timedelta(hours=6),
+    # IMPORTANT: identity MUST be string for JWT
+    token = create_access_token(
+        identity=user.id,
+        additional_claims={"role": user.role}
     )
 
     return jsonify({
-        "message": "Login successful",
-        "token": access_token,
-        "user": {
-            "username": user.username,
-            "email": user.email,
-            "is_admin": user.is_admin,
-        },
+        "access_token": token,
+        "role": user.role,
+        "user_id": user.id,
+        "username": user.username
     }), 200
-
-
-#Protected route 
-@auth_bp.route("/profile", methods=["GET"])
-@jwt_required()
-def profile():
-    current_user = get_jwt_identity()
-    return jsonify({"message": "Welcome to your profile", "user": current_user}), 200
