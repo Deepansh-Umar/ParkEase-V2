@@ -1,30 +1,27 @@
-from app import app
-from backend.extentions import db
+from extensions import db
 from models import User
-import uuid
+from app import app
 from werkzeug.security import generate_password_hash
 
 def setup_db():
     with app.app_context():
-        # Create tables
         db.create_all()
 
-        # Check if admin exists
         if not User.query.filter_by(username="admin").first():
-            hashed_pw = generate_password_hash("admin@iitm", method="pbkdf2:sha256", salt_length=16)
+            hashed_pw = generate_password_hash("admin123")
+
             admin = User(
-                
-                user_id = "iitmadmin",
+                id="admins",
                 username="admin",
-                email="admin@gmail.com",
+                email="admin@example.com",
                 password=hashed_pw,
-                is_admin = True
+                role="admin"
             )
             db.session.add(admin)
             db.session.commit()
-            print("Admin user created")
+            print("Admin created successfully")
         else:
-            print("Admin user already exists.")
+            print("Admin already exists")
 
 if __name__ == "__main__":
     setup_db()
