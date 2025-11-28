@@ -1,5 +1,5 @@
 from models import User, ParkingLot, ParkingSpot, Reservation
-from extensions import db
+from extensions import db,cache
 from sqlalchemy import func
 from datetime import datetime
 import time
@@ -112,6 +112,7 @@ def get_user_history(user_id):
 # ---------------------------------------------------
 # USER: Summary (date → total cost)
 # ---------------------------------------------------
+@cache.memoize(timeout=180)
 def get_user_summary(user_id):
     rows = db.session.query(
         func.date(Reservation.start_time),

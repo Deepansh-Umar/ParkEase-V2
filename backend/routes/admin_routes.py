@@ -1,9 +1,10 @@
 # routes/admin_routes.py
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import verify_jwt_in_request, get_jwt
-from extensions import db
+from extensions import db,cache
 from models import ParkingLot, ParkingSpot, User, Reservation
 import utils
+
 
 admin_bp = Blueprint("admin_bp", __name__)
 
@@ -41,6 +42,7 @@ def dashboard():
 # GET all lots
 # -------------------------------------------------------
 @admin_bp.route("/lots", methods=["GET"])
+@cache.cached(timeout=180, key_prefix="admin_lots")
 def get_lots():
     lots = ParkingLot.query.all()
     result = []
@@ -80,6 +82,8 @@ def add_lot():
 
     db.session.add(new_lot)
     db.session.commit()
+    cache.delete("admin_lots")
+    cache.delete("user_lots")
 
     utils.init_spots(new_lot.id, new_lot.max_spots)
 
@@ -111,7 +115,8 @@ def edit_lot(lot_id):
         lot.max_spots = new_spots
 
     db.session.commit()
-
+    cache.delete("admin_lots")
+    cache.delete("user_lots")
     return jsonify({"message": "Lot updated"}), 200
 
 
@@ -127,7 +132,8 @@ def delete_lot(lot_id):
 
     db.session.delete(lot)
     db.session.commit()
-
+    cache.delete("admin_lots")
+    cache.delete("user_lots")
     return jsonify({"message": "Lot deleted"}), 200
 
 
@@ -135,17 +141,19 @@ def delete_lot(lot_id):
 # GET all users
 # -------------------------------------------------------
 @admin_bp.route("/users", methods=["GET"])
+@cache.cached(timeout=300, key_prefix="admin_users")
 def view_users():
     users = User.query.all()
     result = []
 
     for u in users:
-        result.append({
-            "id": u.id,
-            "username": u.username,
-            "email": u.email,
-            "role": u.role
-        })
+        if u.role!="admin":
+            result.append({
+                "id": u.id,
+                "username": u.username,
+                "email": u.email,
+                "role": u.role
+            })
 
     return jsonify(result), 200
 

@@ -1,10 +1,13 @@
 import os
-from flask import Flask, jsonify
+from flask import Flask, app, jsonify
 from flask_cors import CORS
 from extensions import db, jwt, cache
 from routes.auth_routes import auth_bp
 from routes.admin_routes import admin_bp
 from routes.user_routes import user_bp
+from datetime import datetime
+from celery import Celery, Task
+from celery_folder.celery_factory import celery_init_app
 
 def create_app():
     app = Flask(__name__)
@@ -26,13 +29,25 @@ def create_app():
 
     CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=True)
 
+    #celery config
+    app.config.from_mapping(
+    CELERY=dict(
+        broker_url="redis://localhost:6379/0",
+        result_backend="redis://localhost:6379/1",
+        task_ignore_result=True,
+        timezone="Asia/Kolkata"
+    ),
+)
+    celery_app = celery_init_app(app)
+
     app.register_blueprint(auth_bp, url_prefix='/api/auth')
     app.register_blueprint(admin_bp, url_prefix='/api/admin')
     app.register_blueprint(user_bp, url_prefix='/api/user')
 
-    @app.route('/')
+    @app.route('/cache-test')
+    @cache.cached(timeout=3)
     def home():
-        return jsonify({"message": "Vehicle Parking Backend Running Successfully!"})
+        return {"message": datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")}
 
     return app
 

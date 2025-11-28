@@ -4,7 +4,7 @@ from extensions import db
 from models import ParkingLot, ParkingSpot, Reservation, User
 from datetime import datetime
 from extensions import cache
-from utils import get_user_history, get_user_summary, get_user_active_reservations,format_dt
+from utils import get_user_history, get_user_summary, get_user_active_reservations,format_dt,get_user_summary_data
 
 user_bp = Blueprint('user', __name__)
 
@@ -38,8 +38,9 @@ def user_only():
 
 
 # ---------------- LOTS ----------------
-@cache.cached(timeout=240)
+
 @user_bp.route('/lots', methods=['GET'])
+@cache.cached(timeout=180, key_prefix="user_lots")
 def view_lots():
     lots = ParkingLot.query.all()
     data = []
@@ -81,7 +82,8 @@ def reserve_spot(lot_id):
 
     db.session.add(reservation)
     db.session.commit()
-
+    # cache.delete("user_lots")
+    cache.delete_memoized(get_user_summary, user_id)
     return jsonify({
         "message": f"Spot {spot.id} reserved",
         "spot_id": spot.id
@@ -118,7 +120,8 @@ def release_spot(spot_id):
     reservation.total_cost = cost
 
     db.session.commit()
-
+    cache.delete("user_lots")
+    cache.delete_memoized(get_user_summary, reservation.user_id)
     return jsonify({
         "message": f"Spot {spot.id} released successfully",
         "cost": cost,
