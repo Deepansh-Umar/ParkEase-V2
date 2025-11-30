@@ -8,7 +8,7 @@ from utils import generate_user_id
 
 auth_bp = Blueprint("auth_bp", __name__)
 
-# ----------------------------- REGISTER -----------------------------
+#  REGISTER 
 @auth_bp.route("/register", methods=["POST"])
 def register():
     data = request.get_json()
@@ -43,7 +43,7 @@ def register():
     return jsonify({"message": "Registration successful"}), 201
 
 
-# ----------------------------- LOGIN -----------------------------
+#  LOGIN 
 @auth_bp.route("/login", methods=["POST"])
 def login():
     data = request.get_json()
@@ -56,7 +56,7 @@ def login():
     if not user or not check_password_hash(user.password, password):
         return jsonify({"error": "Invalid username or password"}), 401
 
-    # IMPORTANT: identity MUST be string for JWT
+    # lot of issues with jwt string vs json format
     token = create_access_token(
         identity=user.id,
         additional_claims={"role": user.role}

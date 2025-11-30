@@ -5,39 +5,41 @@ from models import ParkingLot, ParkingSpot, Reservation, User
 from datetime import datetime
 from extensions import cache
 from utils import get_user_history, get_user_summary, get_user_active_reservations,format_dt,get_user_summary_data
+from celery_folder.tasks import export_reservations
+import os
+from flask import send_file
 
 user_bp = Blueprint('user', __name__)
 
-# ---------------------------------------
-# 1. Allow OPTIONS before checking JWT
-# ---------------------------------------
-@user_bp.before_request
-def allow_options():
-    if request.method == "OPTIONS":
-        return None
 
-# ---------------------------------------
-# 2. JWT + role check
-# ---------------------------------------
+
+#applying jwt authentication and role check
 @user_bp.before_request
 def user_only():
-    # Skip OPTIONS safely
     if request.method == "OPTIONS":
         return None
+    # Allowing download to be public
+    open_endpoints = [
+        "user.download_file",
+        "user.task_status"
+    ]
+    if request.endpoint in open_endpoints:
+        return None
 
-    # Verify JWT here
+    # Enforcing jwt authentication
     try:
         jwt_required()(lambda: None)()
-    except Exception:
-        return jsonify({"error": "Missing or invalid token"}), 401
+    except Exception as e:
+        return jsonify({"error": str(e)}), 401
 
-    # Check role
+    # Role check
     claims = get_jwt()
     if claims.get("role") != "user":
         return jsonify({"error": "Users only"}), 403
 
 
-# ---------------- LOTS ----------------
+
+#LOTS 
 
 @user_bp.route('/lots', methods=['GET'])
 @cache.cached(timeout=180, key_prefix="user_lots")
@@ -57,7 +59,7 @@ def view_lots():
     return jsonify(data), 200
 
 
-# ---------------- RESERVE ----------------
+#  RESERVE 
 @user_bp.route('/reserve/<int:lot_id>', methods=['POST'])
 def reserve_spot(lot_id):
     user_id = get_jwt_identity()
@@ -82,7 +84,7 @@ def reserve_spot(lot_id):
 
     db.session.add(reservation)
     db.session.commit()
-    # cache.delete("user_lots")
+    cache.delete("user_lots")
     cache.delete_memoized(get_user_summary, user_id)
     return jsonify({
         "message": f"Spot {spot.id} reserved",
@@ -90,7 +92,7 @@ def reserve_spot(lot_id):
     }), 200
 
 
-# ---------------- VACATE ----------------
+#  VACATE 
 @user_bp.route('/release/<string:spot_id>', methods=['POST'])
 def release_spot(spot_id):
     spot = ParkingSpot.query.get(spot_id)
@@ -105,7 +107,7 @@ def release_spot(spot_id):
     if not reservation:
         return jsonify({"error": "No active reservation found"}), 400
 
-    # ---- Update status ----
+    #  Update status 
     spot.status = "A"
 
     reservation.leave_time = datetime.utcnow()
@@ -133,7 +135,7 @@ def release_spot(spot_id):
 
 
 
-# ---------------- ACTIVE RESERVATIONS ----------------
+#  ACTIVE RESERVATIONS 
 @user_bp.route('/active', methods=['GET'])
 def user_active():
     user_id = get_jwt_identity()
@@ -141,7 +143,7 @@ def user_active():
 
 
 
-# ---------------- SUMMARY ----------------
+#  SUMMARY 
 @user_bp.route('/summary', methods=['GET'])
 def summary():
     user_id = get_jwt_identity()
@@ -150,3 +152,29 @@ def summary():
         "summary": get_user_summary(user_id),
         "history": get_user_history(user_id)
     }), 200
+
+@user_bp.route("/export", methods=["POST"])
+def export_user_data():
+    user_id = get_jwt_identity()
+
+    task = export_reservations.delay(user_id=user_id, is_admin=False)
+    return jsonify({"task_id": task.id}), 202
+
+
+
+@user_bp.route("/download/<task_id>", methods=["GET"])
+def download_file(task_id):
+
+    folder = "./celery_folder/exported_files"
+    for f in os.listdir(folder):
+        if task_id in f:
+            return send_file(os.path.join(folder, f), as_attachment=True)
+
+    return jsonify({"error": "file not ready"}), 404
+
+from celery.result import AsyncResult
+
+@user_bp.route("/task/<task_id>", methods=["GET"])
+def task_status(task_id):
+    result = AsyncResult(task_id)
+    return jsonify({"status": result.status})

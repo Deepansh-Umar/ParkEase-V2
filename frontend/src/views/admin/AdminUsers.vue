@@ -146,15 +146,15 @@ async function openSummary(userId) {
 
   try {
     const res = await axios.get(`/admin/summary/${userId}`)
-    // response shape: { user, bookings, top_usage, fav_spots }
+    
     modalData.value = res.data
   } catch (err) {
     alert(err.response?.data?.error || "Failed to load user summary")
   } finally {
     modalLoading.value = false
-    // show bootstrap modal
+    
     if (!bootstrapModal) {
-      // eslint-disable-next-line no-undef
+      
       bootstrapModal = new bootstrap.Modal(modalEl.value)
     }
     bootstrapModal.show()

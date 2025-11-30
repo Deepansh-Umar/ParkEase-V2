@@ -3,6 +3,11 @@
 
     <h3>User Summary</h3>
 
+    <!-- Export button -->
+    <button class="btn btn-success mb-3" @click="exportMyReservations">
+      Download My Reservations (CSV)
+    </button>
+
     <div class="row mt-4">
       <div class="col-md-6">
         <div class="card p-3">
@@ -54,6 +59,25 @@ const costChart = ref(null)
 const summary = ref([])
 const history = ref([])
 
+async function exportMyReservations() {
+  const res = await axios.post("/user/export")
+  const taskId = res.data.task_id
+
+  const interval = setInterval(async () => {
+    
+    const check = await axios.get(`/user/task/${taskId}`)
+
+    if (check.data.status === "SUCCESS") {
+      clearInterval(interval)
+
+     
+      window.location.href = `${window.location.origin}/api/user/download/${taskId}`
+    }
+  }, 1500)
+}
+
+
+
 async function load() {
   const r = await axios.get("/user/summary")
   summary.value = r.data.summary
@@ -74,7 +98,8 @@ function drawCostChart() {
       labels,
       datasets: [{
         label: "Cost (₹)",
-        data: values
+        data: values,
+        backgroundColor: "#4e79a7",
       }]
     }
   })

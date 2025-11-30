@@ -73,7 +73,7 @@ import { ref, onMounted } from "vue"
 import axios from "../../api/axios"
 
 const lots = ref([])
-const active = ref([])   // FIXED: always an array
+const active = ref([])
 
 async function fetchLots() {
   const res = await axios.get("/user/lots")
@@ -82,7 +82,7 @@ async function fetchLots() {
 
 async function fetchActive() {
   const res = await axios.get("/user/active")
-  active.value = res.data || []   // FIXED: ensure list
+  active.value = res.data || []
 }
 
 async function reserve(lotId) {

@@ -10,3 +10,5 @@ node_modules/
 # OS stuff
 .DS_Store
 Thumbs.db
+
+*.db

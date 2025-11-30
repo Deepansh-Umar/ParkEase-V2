@@ -4,16 +4,16 @@ from sqlalchemy import func
 from datetime import datetime
 import time
 
-# ---------------------------------------------------
+
 # ID GENERATOR
-# ---------------------------------------------------
+
 def generate_user_id():
     return int(time.time())
 
 
-# ---------------------------------------------------
+
 # SPOT INITIALIZATION
-# ---------------------------------------------------
+
 def init_spots(lot_id, max_spots):
     for i in range(max_spots):
         spot = ParkingSpot(
@@ -26,9 +26,9 @@ def init_spots(lot_id, max_spots):
     db.session.commit()
 
 
-# ---------------------------------------------------
+
 # SPOT EDITING (only if no active reservations)
-# ---------------------------------------------------
+
 def edit_spots(lot_id, new_count):
     active = (
         db.session.query(ParkingSpot)
@@ -56,9 +56,9 @@ def edit_spots(lot_id, new_count):
     return None
 
 
-# ---------------------------------------------------
+
 # USER: Active Reservation
-# ---------------------------------------------------
+
 def get_user_active_reservations(user_id):
     reservations = Reservation.query.filter_by(
         user_id=user_id,
@@ -80,9 +80,9 @@ def get_user_active_reservations(user_id):
     ]
 
 
-# ---------------------------------------------------
+
 # USER: History (Closed reservations)
-# ---------------------------------------------------
+
 def get_user_history(user_id):
     records = Reservation.query.filter(
         Reservation.user_id == user_id,
@@ -109,9 +109,9 @@ def get_user_history(user_id):
 
 
 
-# ---------------------------------------------------
+
 # USER: Summary (date → total cost)
-# ---------------------------------------------------
+
 @cache.memoize(timeout=180)
 def get_user_summary(user_id):
     rows = db.session.query(
@@ -128,9 +128,9 @@ def get_user_summary(user_id):
     ]
 
 
-# ---------------------------------------------------
+
 # ADMIN: Summary for ONE user
-# ---------------------------------------------------
+
 def get_user_summary_data(user):
     # All bookings
     bookings = Reservation.query.filter_by(user_id=user.id).all()
@@ -154,9 +154,9 @@ def get_user_summary_data(user):
     }
 
 
-# ---------------------------------------------------
+
 # ADMIN: Global Summary (Top users + Top lots)
-# ---------------------------------------------------
+
 def admin_summary_data():
     # Top Users
     users = (
@@ -185,9 +185,9 @@ def admin_summary_data():
     return {"top_users": top_users, "top_lots": top_lots}
 
 
-# ---------------------------------------------------
+
 # ADMIN: Chart Data
-# ---------------------------------------------------
+
 def admin_chart_data():
     rows = db.session.query(
         func.date(Reservation.start_time),

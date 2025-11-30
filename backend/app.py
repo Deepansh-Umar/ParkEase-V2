@@ -1,13 +1,13 @@
 import os
-from flask import Flask, app, jsonify
+from flask import Flask, app
 from flask_cors import CORS
 from extensions import db, jwt, cache
 from routes.auth_routes import auth_bp
 from routes.admin_routes import admin_bp
 from routes.user_routes import user_bp
-from datetime import datetime
-from celery import Celery, Task
 from celery_folder.celery_factory import celery_init_app
+from celery_folder.tasks import export_reservations
+
 
 def create_app():
     app = Flask(__name__)
@@ -34,26 +34,29 @@ def create_app():
     CELERY=dict(
         broker_url="redis://localhost:6379/0",
         result_backend="redis://localhost:6379/1",
-        task_ignore_result=True,
         timezone="Asia/Kolkata"
     ),
 )
-    celery_app = celery_init_app(app)
+    celery_init_app(app)
+     
 
     app.register_blueprint(auth_bp, url_prefix='/api/auth')
     app.register_blueprint(admin_bp, url_prefix='/api/admin')
     app.register_blueprint(user_bp, url_prefix='/api/user')
 
-    @app.route('/cache-test')
+    @app.route('/celery')
     @cache.cached(timeout=3)
     def home():
-        return {"message": datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")}
+        task = export_reservations.delay()
+        return {"message": task.id}
+    
 
     return app
 
 
-
 app = create_app()
+celery_app = app.extensions["celery"]
+import celery_folder.c_schedule 
 
 if __name__ == '__main__':
     app.run(debug=True)
