@@ -2,6 +2,7 @@ import { createRouter, createWebHistory } from "vue-router"
 
 import Login from "../views/auth/Login.vue"
 import Register from "../views/auth/Register.vue"
+import Landing from "../views/Landing.vue"
 
 import UserDashboard from "../views/user/UserDashboard.vue"
 import UserSummary from "../views/user/UserSummary.vue"
@@ -15,7 +16,7 @@ import AdminLotEdit from "../views/admin/AdminLotEdit.vue"
 import AdminLotSpots from "../views/admin/AdminLotSpots.vue"
 
 const routes = [
-  { path: "/", redirect: "/login" },
+  { path: "/", component: Landing },
   { path: "/login", component: Login },
   { path: "/register", component: Register },
 
