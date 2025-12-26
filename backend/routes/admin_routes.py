@@ -56,9 +56,15 @@ def dashboard():
 @cache.cached(timeout=180, key_prefix="admin_lots")
 def get_lots():
     lots = ParkingLot.query.all()
+
     result = []
+    total_spots = 0
+    occupied = 0
 
     for lot in lots:
+        total_spots += lot.max_spots
+        occupied += lot.in_use
+
         result.append({
             "id": lot.id,
             "name": lot.name,
@@ -66,10 +72,22 @@ def get_lots():
             "pincode": lot.pincode,
             "hourly_price": lot.hourly_price,
             "max_spots": lot.max_spots,
-            "in_use": lot.in_use
+            "in_use": lot.in_use,
+            "active": lot.in_use>0
         })
 
-    return jsonify(result), 200
+    stats = {
+        "total_lots": len(lots),
+        "total_spots": total_spots,
+        "occupied": occupied,
+        "available": total_spots - occupied
+    }
+
+    return jsonify({
+        "lots": result,
+        "stats": stats
+    }), 200
+
 
 
 
@@ -203,10 +221,8 @@ def user_summary_by_admin(user_id):
 @admin_bp.route("/lotwise_summary", methods=["GET"])
 def lotwise_summary():
     data = utils.admin_summary_data()
-    return jsonify({
-        "top_users": data["top_users"],
-        "top_lots": data["top_lots"]
-    }), 200
+    return jsonify(data), 200
+
 
 
 
@@ -221,7 +237,7 @@ def view_spots(lot_id):
         result.append({
             "id": s.id,
             "lot_id": s.lot_id,
-            "status": s.status
+            "status": "Available" if s.status == "A" else "Occupied"
         })
 
     return jsonify(result), 200
@@ -249,3 +265,18 @@ def download_file(task_id):
 def task_status(task_id):
     result = AsyncResult(task_id)
     return jsonify({"status": result.status})
+
+@admin_bp.route("/active-reservations", methods=["GET"])
+def active_reservations():
+    rows = Reservation.query.filter_by(status = "Active").all()
+    r2=[]
+    for r in rows:
+        r2.append({
+            "id": r.id,
+            "username": r.user.username,
+            "lot_name": r.lot.name,
+            "address": r.lot.address,
+            "spot_id": r.spot_id,
+            "start_time": str(r.start_time)
+        })
+    return jsonify(r2), 200

@@ -182,7 +182,23 @@ def admin_summary_data():
 
     top_lots = [{"name": n, "count": int(c)} for n, c in lots]
 
-    return {"top_users": top_users, "top_lots": top_lots}
+    # Totals
+    total_reservations = db.session.query(func.count(Reservation.id)).scalar() or 0
+    total_users = db.session.query(func.count(User.id)).scalar() or 0
+
+    # Adjust field name if revenue is stored differently
+    total_revenue = (
+        db.session.query(func.coalesce(func.sum(Reservation.total_cost), 0))
+        .scalar()
+    )
+
+    return {
+        "top_users": top_users,
+        "top_lots": top_lots,
+        "total_reservations": int(total_reservations),
+        "total_revenue": float(total_revenue),
+        "total_users": int(total_users),
+    }
 
 
 
