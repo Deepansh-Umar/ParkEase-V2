@@ -21,10 +21,21 @@ def create_app():
     app.config['JWT_SECRET_KEY'] = 'super-secret-key'
 
     # Redis Cache configuration
-    app.config["CACHE_TYPE"] = "RedisCache"
+
+    # use these for local development
+    '''app.config["CACHE_TYPE"] = "RedisCache"
     app.config["CACHE_REDIS_HOST"] = "localhost"
     app.config["CACHE_REDIS_PORT"] = 6379
-    app.config["CACHE_DEFAULT_TIMEOUT"] = 60  
+    app.config["CACHE_DEFAULT_TIMEOUT"] = 60''' 
+
+    # use these for deployed on render
+    REDIS_URL = os.environ.get("REDIS_URL")
+
+    app.config["CACHE_TYPE"] = "RedisCache"
+    app.config["CACHE_REDIS_URL"] = REDIS_URL
+    app.config["CACHE_DEFAULT_TIMEOUT"] = 60
+
+
 
     db.init_app(app)
     jwt.init_app(app)
@@ -32,14 +43,26 @@ def create_app():
 
     CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=True)
 
-    #celery config
-    app.config.from_mapping(
+    #celery config forlocal development
+    '''app.config.from_mapping(
     CELERY=dict(
         broker_url="redis://localhost:6379/0",
         result_backend="redis://localhost:6379/1",
         timezone="Asia/Kolkata"
     ),
-)
+)'''
+
+    #celery config for deployed on render
+    REDIS_URL = os.environ.get("REDIS_URL")
+
+    app.config.from_mapping(
+        CELERY=dict(
+            broker_url=REDIS_URL,
+            result_backend=REDIS_URL,
+            timezone="Asia/Kolkata"
+        ),
+    )
+
     celery_init_app(app)
      
 
