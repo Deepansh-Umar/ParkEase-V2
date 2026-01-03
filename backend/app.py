@@ -1,5 +1,5 @@
 import os
-from flask import Flask, app
+from flask import Flask
 from flask_cors import CORS
 from extensions import db, jwt, cache
 from routes.auth_routes import auth_bp
@@ -7,13 +7,16 @@ from routes.admin_routes import admin_bp
 from routes.user_routes import user_bp
 from celery_folder.celery_factory import celery_init_app
 from celery_folder.tasks import export_reservations
+from db_setup import setup_db
 
 
 def create_app():
     app = Flask(__name__)
 
     BASE_DIR = os.path.abspath(os.path.dirname(__file__))
-    app.config['SQLALCHEMY_DATABASE_URI'] = f"sqlite:///{os.path.join(BASE_DIR, 'parking.db')}"
+    db_path = os.path.join(BASE_DIR, "parking.db")
+
+    app.config["SQLALCHEMY_DATABASE_URI"] = f"sqlite:///{db_path}"
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     app.config['JWT_SECRET_KEY'] = 'super-secret-key'
 
@@ -50,7 +53,8 @@ def create_app():
         task = export_reservations.delay()
         return {"message": task.id}
     
-
+    if not os.path.exists(db_path):
+        setup_db(app)
     return app
 
 
