@@ -1,5 +1,5 @@
 import os
-from flask import Flask
+from flask import Flask, app
 from flask_cors import CORS
 from extensions import db, jwt, cache
 from routes.auth_routes import auth_bp
@@ -16,9 +16,16 @@ def create_app():
     BASE_DIR = os.path.abspath(os.path.dirname(__file__))
     db_path = os.path.join(BASE_DIR, "parking.db")
 
-    app.config["SQLALCHEMY_DATABASE_URI"] = f"sqlite:///{db_path}"
-    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-    app.config['JWT_SECRET_KEY'] = 'super-secret-key'
+    # Database configuration (SQLite for simplicity)
+    '''app.config["SQLALCHEMY_DATABASE_URI"] = f"sqlite:///{db_path}"
+    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False'''
+
+    # use these for deployed on render(PostgreSQL)
+    DATABASE_URL = os.environ.get("DATABASE_URL")
+    app.config["SQLALCHEMY_DATABASE_URI"] = DATABASE_URL
+
+    # JWT configuration
+    app.config['JWT_SECRET_KEY'] = os.environ.get("JWT_SECRET_KEY")
 
     # Redis Cache configuration
 
@@ -76,8 +83,9 @@ def create_app():
         task = export_reservations.delay()
         return {"message": task.id}
     
-    if not os.path.exists(db_path):
-        setup_db(app)
+    # Setup the database and create admin user if not exists
+    setup_db(app)
+
     return app
 
 
