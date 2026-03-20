@@ -60,7 +60,8 @@ The application is built using **Flask (API)** and **Vue 3 (UI)** with **JWT-bas
 - Celery (background jobs)
 
 ### Database & Caching
-- SQLite (only database used)
+- SQLite (during development)
+- Postgres (deployed)
 - Redis (caching + message broker)
 
 ---
@@ -133,6 +134,10 @@ celery -A app.celery_app --loglevel=info
 cd backend
 source venv/bin/activate
 celery -A app.celery_app --loglevel=info
+```
+### MailHog (Mails Testing)
+```
+~MailHog
 ```
 ###  Frontend Setup
 ```bash
