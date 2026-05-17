@@ -1,14 +1,15 @@
 import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
+import os
 
 
-SMTP_SERVER = "localhost"
+'''SMTP_SERVER = "localhost"
 SMTP_PORT = 1025
-SENDER_EMAIL = 'ParkEaseAdmin@example.com'
+SENDER_EMAIL = 'ParkEaseAdmin@example.com'''
 
 
-def send_email(to, subject, html):
+'''def send_email(to, subject, html):
 
     msg = MIMEMultipart("alternative")
     msg['To'] = to
@@ -19,8 +20,38 @@ def send_email(to, subject, html):
 
     with smtplib.SMTP(host=SMTP_SERVER, port=SMTP_PORT) as client:
         client.send_message(msg)
-        client.quit()
+        client.quit()'''
 
+
+'''LOCAL
+SMTP_SERVER = "smtp.gmail.com"
+SMTP_PORT = 587
+SENDER_EMAIL = "[EMAIL_ADDRESS]"
+SMTP_USER = "[EMAIL_ADDRESS]"
+SMTP_PASS = "[PASSWORD]"
+'''
+#render
+SMTP_SERVER = "smtp.gmail.com"
+SMTP_PORT = 587
+SENDER_EMAIL = os.getenv("GMAIL")
+SMTP_USER = os.getenv("GMAIL")
+SMTP_PASS = os.getenv("GMAIL_PASSWORD")
+
+
+
+def send_email(to, subject, html):
+
+    msg = MIMEMultipart("alternative")
+    msg["To"] = to
+    msg["Subject"] = subject
+    msg["From"] = "brawlersstop@gmail.com"
+
+    msg.attach(MIMEText(html, "html"))
+
+    with smtplib.SMTP(host=SMTP_SERVER, port=SMTP_PORT) as client:
+        client.starttls()
+        client.login(user=SMTP_USER , password=SMTP_PASS)
+        client.send_message(msg)
 
 
 def daily_reminder_template(username):

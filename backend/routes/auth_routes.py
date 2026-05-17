@@ -5,6 +5,7 @@ from flask_jwt_extended import create_access_token
 from extensions import db,cache
 from models import User
 from utils import generate_user_id
+from celery_folder.mails import send_email  
 
 auth_bp = Blueprint("auth_bp", __name__)
 
@@ -40,6 +41,25 @@ def register():
     db.session.commit()
     cache.delete("admin_users")
 
+    try:
+
+        send_email(
+            to=email,
+            subject="Registration Successful",
+            html=f"""
+                <html>
+                <body>
+                    <h2>Hello {username}</h2>
+                    <p>Thank you for registering with ParkEase!</p>
+                    <p>You can now log in and enjoy our services</p>
+                </body>
+                </html>
+            """
+        )
+
+    except Exception as e:
+        print("Email not sent:", e)
+        
     return jsonify({"message": "Registration successful"}), 201
 
 
