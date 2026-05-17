@@ -7,6 +7,15 @@ from models import User
 from utils import generate_user_id
 from celery_folder.mails import send_email  
 
+import threading
+
+def async_send_email(to, subject, html):
+    try:
+        send_email(to=to, subject=subject, html=html)
+    except Exception as e:
+        print("EMAIL FAILED:", e)
+
+
 auth_bp = Blueprint("auth_bp", __name__)
 
 #  REGISTER 
@@ -49,10 +58,9 @@ def register():
 
     try:
 
-        send_email(
-            to=email,
-            subject="Registration Successful",
-            html=f"""
+        threading.Thread(
+            target=async_send_email,
+            args=(email, "Registration Successful", f"""
                 <html>
                 <body>
                     <h2>Hello {username}</h2>
@@ -60,8 +68,9 @@ def register():
                     <p>You can now log in and enjoy our services</p>
                 </body>
                 </html>
-            """
-        )
+            """),
+            daemon=True
+        ).start()
 
     except Exception as e:
         print("Email not sent:", e)
