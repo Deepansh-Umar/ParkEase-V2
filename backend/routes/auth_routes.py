@@ -11,7 +11,9 @@ import threading
 
 def async_send_email(to, subject, html):
     try:
+        print("EMAIL THREAD STARTED") 
         send_email(to=to, subject=subject, html=html)
+        print("EMAIL SENT SUCCESSFULLY") 
     except Exception as e:
         print("EMAIL FAILED:", e)
 
