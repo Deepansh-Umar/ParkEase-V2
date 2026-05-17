@@ -39,7 +39,13 @@ def register():
 
     db.session.add(user)
     db.session.commit()
-    cache.delete("admin_users")
+
+# cache 
+    try:
+        cache.delete("admin_users")
+    except Exception as e:
+        print("CACHE ERROR:", e)
+
 
     try:
 
