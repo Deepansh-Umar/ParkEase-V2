@@ -100,8 +100,38 @@ async function exportAllReservations() {
 }
 
 function exportAllReservations_nc() {
-  window.location.href =
-    `${window.location.origin}/api/admin/export2`
+    try {
+
+    const response = await axios.get(
+      "/admin/export2",
+      {
+        responseType: "blob"
+      }
+    )
+
+    const blob = new Blob(
+      [response.data],
+      { type: "text/csv" }
+    )
+
+    const url = window.URL.createObjectURL(blob)
+
+    const link = document.createElement("a")
+
+    link.href = url
+    link.download = "my_reservations.csv"
+
+    document.body.appendChild(link)
+
+    link.click()
+
+    link.remove()
+
+    window.URL.revokeObjectURL(url)
+
+  } catch (err) {
+    console.error(err)
+  }
 }
 
 async function load() {

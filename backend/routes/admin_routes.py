@@ -23,8 +23,7 @@ def check_admin():
     # Allow public endpoints for downloading
     open_endpoints = [
         "admin_bp.download_file",
-        "admin_bp.task_status",
-        "admin_bp.export_csv"
+        "admin_bp.task_status"
     ]
     if request.endpoint in open_endpoints:
         return None
