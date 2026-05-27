@@ -99,7 +99,7 @@ async function exportAllReservations() {
   }, 1500)
 }
 
-function exportAllReservations_nc() {
+async function exportAllReservations_nc() {
     try {
 
     const response = await axios.get(
