@@ -34,6 +34,9 @@
 
           <button class="btn btn-success btn-sm" @click="exportMyReservations">
             Download CSV
+          </button><br>
+          <button class="btn btn-success btn-sm" @click="exportMyReservations_nc">
+            Download CSV (non-celery)
           </button>
         </div>
 
@@ -98,6 +101,40 @@ async function exportMyReservations() {
         `${window.location.origin}/api/user/download/${taskId}`
     }
   }, 1500)
+}
+async function exportMyReservations_nc() {
+  try {
+
+    const response = await axios.get(
+      "/user/export2",
+      {
+        responseType: "blob"
+      }
+    )
+
+    const blob = new Blob(
+      [response.data],
+      { type: "text/csv" }
+    )
+
+    const url = window.URL.createObjectURL(blob)
+
+    const link = document.createElement("a")
+
+    link.href = url
+    link.download = "my_reservations.csv"
+
+    document.body.appendChild(link)
+
+    link.click()
+
+    link.remove()
+
+    window.URL.revokeObjectURL(url)
+
+  } catch (err) {
+    console.error(err)
+  }
 }
 
 async function load() {

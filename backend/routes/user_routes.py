@@ -178,3 +178,49 @@ from celery.result import AsyncResult
 def task_status(task_id):
     result = AsyncResult(task_id)
     return jsonify({"status": result.status})
+
+#this is setup so that we can skip using celery as its not free on render and just generate the file on demand. In production, we can switch to celery for better performance and user experience.
+
+from flask import Response
+import csv
+import io
+@user_bp.route("/export2")
+def export_user_data2():
+    user_id = get_jwt_identity()
+
+    
+    rows = Reservation.query.filter_by(user_id=user_id).all()
+
+    output = io.StringIO()
+
+    writer = csv.writer(output)
+
+    writer.writerow([
+        "ID", "User", "Lot", "Spot",
+        "Start Time", "Leave Time",
+        "Total Cost", "Hourly Cost", "Status"
+    ])
+
+    for r in rows:
+        writer.writerow([
+            r.id,
+            r.user.username,
+            r.lot.name,
+            r.spot_id,
+            str(r.start_time),
+            str(r.leave_time or ""),
+            r.total_cost or 0,
+            r.hourly_cost,
+            r.status
+        ])
+
+    csv_data = output.getvalue()
+
+    return Response(
+        csv_data,
+        mimetype="text/csv",
+        headers={
+            "Content-Disposition":
+            "attachment; filename=reservations.csv"
+        }
+    )

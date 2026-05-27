@@ -23,7 +23,8 @@ def check_admin():
     # Allow public endpoints for downloading
     open_endpoints = [
         "admin_bp.download_file",
-        "admin_bp.task_status"
+        "admin_bp.task_status",
+        "admin_bp.export_csv"
     ]
     if request.endpoint in open_endpoints:
         return None
@@ -280,3 +281,49 @@ def active_reservations():
             "start_time": str(r.start_time)
         })
     return jsonify(r2), 200
+
+
+#this is setup so that we can skip using celery as its not free on render and just generate the file on demand. In production, we can switch to celery for better performance and user experience.
+
+from flask import Response
+import csv
+import io
+
+@admin_bp.route("/export2")
+def export_csv():
+
+    rows = Reservation.query.all()
+
+    output = io.StringIO()
+
+    writer = csv.writer(output)
+
+    writer.writerow([
+        "ID", "User", "Lot", "Spot",
+        "Start Time", "Leave Time",
+        "Total Cost", "Hourly Cost", "Status"
+    ])
+
+    for r in rows:
+        writer.writerow([
+            r.id,
+            r.user.username,
+            r.lot.name,
+            r.spot_id,
+            str(r.start_time),
+            str(r.leave_time or ""),
+            r.total_cost or 0,
+            r.hourly_cost,
+            r.status
+        ])
+
+    csv_data = output.getvalue()
+
+    return Response(
+        csv_data,
+        mimetype="text/csv",
+        headers={
+            "Content-Disposition":
+            "attachment; filename=reservations.csv"
+        }
+    )

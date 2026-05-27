@@ -19,6 +19,9 @@
     <div class="mb-4">
       <button class="btn btn-primary" @click="exportAllReservations">
         Export All Reservations (CSV)
+      </button><br>
+      <button class="btn btn-primary" @click="exportAllReservations_nc">
+        Export All Reservations (CSV) (non celery)
       </button>
     </div>
 
@@ -94,6 +97,11 @@ async function exportAllReservations() {
         `${window.location.origin}/api/admin/download/${taskId}`
     }
   }, 1500)
+}
+
+function exportAllReservations_nc() {
+  window.location.href =
+    `${window.location.origin}/api/admin/export2`
 }
 
 async function load() {
