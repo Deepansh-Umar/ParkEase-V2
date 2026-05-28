@@ -1,4 +1,5 @@
-# routes/auth_routes.py
+import traceback
+
 from flask import Blueprint, request, jsonify
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_jwt_extended import create_access_token
@@ -15,7 +16,7 @@ def async_send_email(to, subject, html):
         send_email(to=to, subject=subject, html=html)
         print("EMAIL SENT SUCCESSFULLY") 
     except Exception as e:
-        print("EMAIL FAILED:", e)
+        traceback.print_exc()
 
 
 auth_bp = Blueprint("auth_bp", __name__)

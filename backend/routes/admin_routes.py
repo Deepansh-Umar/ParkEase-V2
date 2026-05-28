@@ -56,7 +56,7 @@ def dashboard():
 @cache.cached(timeout=180, key_prefix="admin_lots")
 def get_lots():
     lots = ParkingLot.query.all()
-
+    print(cache.get("admin_lots")) #cache validation
     result = []
     total_spots = 0
     occupied = 0
