@@ -23,7 +23,8 @@ def check_admin():
     # Allow public endpoints for downloading
     open_endpoints = [
         "admin_bp.download_file",
-        "admin_bp.task_status"
+        "admin_bp.task_status",
+        "admin_bp.health_check"
     ]
     if request.endpoint in open_endpoints:
         return None
@@ -326,3 +327,7 @@ def export_csv():
             "attachment; filename=reservations.csv"
         }
     )
+
+@admin_bp.route("/health", methods=["GET"])
+def health_check():
+    return jsonify({"status": "ok"}), 200
